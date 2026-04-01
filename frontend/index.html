@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Route Planner</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<h1>🚀 Route Planner</h1>
+
+<!-- Add Location -->
+<h2>Add Location</h2>
+<input type="text" id="locationName" placeholder="Enter location name">
+<button onclick="addLocation()">Add Location</button>
+
+<hr>
+
+<!-- Add Route -->
+<h2>Add Route</h2>
+<input type="text" id="src" placeholder="Source name">
+<input type="text" id="dst" placeholder="Destination name">
+<input type="number" id="dist" placeholder="Distance">
+<button onclick="addRoute()">Add Route</button>
+
+<hr>
+
+<!-- Find Path -->
+<h2>Find Paths</h2>
+<input type="text" id="source" placeholder="Source name">
+<input type="text" id="dest" placeholder="Destination name">
+<button onclick="getPaths()">Find Paths</button>
+
+<hr>
+
+<h2>All Paths</h2>
+<div id="paths"></div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
