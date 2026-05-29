@@ -5,103 +5,108 @@ import com.routeplanner.route_planner.model.Route;
 import com.routeplanner.route_planner.repository.LocationRepository;
 import com.routeplanner.route_planner.repository.RouteRepository;
 import com.routeplanner.route_planner.util.GraphService;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*")
+@CrossOrigin("*")
 public class RouteController {
 
     private final LocationRepository locationRepo;
     private final RouteRepository routeRepo;
     private final GraphService graphService;
 
-    @Autowired
     public RouteController(LocationRepository locationRepo,
                            RouteRepository routeRepo,
                            GraphService graphService) {
+
         this.locationRepo = locationRepo;
         this.routeRepo = routeRepo;
         this.graphService = graphService;
     }
 
-    // ------------------ Location Endpoints ------------------
+    // ---------------- LOCATIONS ----------------
 
     @PostMapping("/locations")
-    public ResponseEntity<Location> addLocation(@RequestBody Location location) {
-        Location saved = locationRepo.save(location);
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    public Location addLocation(@RequestBody Location location) {
+        return locationRepo.save(location);
     }
 
     @GetMapping("/locations")
-    public ResponseEntity<List<Location>> getLocations() {
-        List<Location> locations = locationRepo.findAll();
-        return ResponseEntity.ok(locations);
+    public List<Location> getLocations() {
+        return locationRepo.findAll();
     }
 
-    // ------------------ Route Endpoints ------------------
+    @DeleteMapping("/locations/{id}")
+    public void deleteLocation(@PathVariable Long id) {
+
+        // delete routes connected to location
+        List<Route> routes = routeRepo.findAll();
+
+        for (Route r : routes) {
+
+            if (r.getSourceId().equals(id)
+                    || r.getDestinationId().equals(id)) {
+
+                routeRepo.deleteById(r.getId());
+            }
+        }
+
+        locationRepo.deleteById(id);
+    }
+
+    // ---------------- ROUTES ----------------
 
     @PostMapping("/routes")
-    public ResponseEntity<Route> addRoute(@RequestBody Route route) {
-        // Optional: Validate source & destination exist
-        if (!locationRepo.existsById(route.getSourceId()) || !locationRepo.existsById(route.getDestinationId())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(null);
-        }
-        Route saved = routeRepo.save(route);
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    public Route addRoute(@RequestBody Route route) {
+        return routeRepo.save(route);
     }
 
     @GetMapping("/routes")
-    public ResponseEntity<List<Route>> getRoutes() {
-        List<Route> routes = routeRepo.findAll();
-        return ResponseEntity.ok(routes);
+    public List<Route> getRoutes() {
+        return routeRepo.findAll();
     }
 
-    // ------------------ Shortest Path ------------------
-
-    @GetMapping("/shortest")
-    public ResponseEntity<?> getShortestPath(@RequestParam Long source,
-                                             @RequestParam Long dest) {
-
-        if (!locationRepo.existsById(source) || !locationRepo.existsById(dest)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "Source or destination not found"));
-        }
-
-        List<Route> routes = routeRepo.findAll();
-        Map<String, Object> shortest = graphService.dijkstra(source, dest, routes);
-
-        return ResponseEntity.ok(shortest);
+    @DeleteMapping("/routes/{id}")
+    public void deleteRoute(@PathVariable Long id) {
+        routeRepo.deleteById(id);
     }
 
-    // ------------------ All Paths ------------------
+    // ---------------- PATHS ----------------
 
-    @GetMapping("/all-paths")
-    public ResponseEntity<?> getAllPaths(@RequestParam Long source,
-                                         @RequestParam Long dest) {
+    @GetMapping("/paths")
+    public Map<String, Object> getPaths(
+            @RequestParam String sourceName,
+            @RequestParam String destinationName
+    ) {
 
-        if (!locationRepo.existsById(source) || !locationRepo.existsById(dest)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "Source or destination not found"));
-        }
+        Location source =
+                locationRepo.findByName(sourceName).orElseThrow();
+
+        Location destination =
+                locationRepo.findByName(destinationName).orElseThrow();
 
         List<Route> routes = routeRepo.findAll();
 
-        List<List<Long>> allPaths = graphService.getAllPaths(source, dest, routes);
-        Map<String, Object> shortest = graphService.dijkstra(source, dest, routes);
+        Map<String, Object> shortest =
+                graphService.dijkstra(
+                        source.getId(),
+                        destination.getId(),
+                        routes
+                );
 
-        return ResponseEntity.ok(Map.of(
-                "allPaths", allPaths,
-                "shortestPath", shortest.get("path"),
-                "shortestDistance", shortest.get("distance")
-        ));
+        List<Map<String, Object>> allPaths =
+                graphService.getAllPathsWithDistance(
+                        source.getId(),
+                        destination.getId(),
+                        routes
+                );
+
+        return Map.of(
+                "shortestPath", shortest,
+                "allPaths", allPaths
+        );
     }
 }

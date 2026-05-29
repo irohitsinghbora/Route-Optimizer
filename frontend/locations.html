@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Locations</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="page-header">
+    <h1>📍 Locations</h1>
+    <button onclick="logout()">Logout</button>
+</div>
+
+<div class="card">
+
+    <input type="text" id="locationName" placeholder="Enter location name">
+
+    <button onclick="addLocation()">
+        Add Location
+    </button>
+
+</div>
+
+<div id="locationsList"></div>
+
+<div class="nav-buttons">
+    <button onclick="window.location.href='routes.html'">
+        Next →
+    </button>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
